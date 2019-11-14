@@ -13,13 +13,7 @@ resource "null_resource" "chart" {
   }
 
   provisioner "local-exec" {
-    command     = "helm upgrade -n '${var.namespace}' --install --values - --version='${var.chart_version}' '${var.release}' '${var.chart}' << 'EOF'\n${local.values}\nEOF"
-    environment = var.environment_variables
-  }
-
-  provisioner "local-exec" {
-    when        = "destroy"
-    command     = "helm uninstall -n '${var.namespace}' '${var.release}'"
+    command     = "helm upgrade -n '${var.namespace}' --install --values - --version='${var.chart_version}' '${var.release}' '${var.chart}' <<ENDVALUES\n${local.values}\nENDVALUES"
     environment = var.environment_variables
   }
 }
