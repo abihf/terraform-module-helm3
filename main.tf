@@ -1,38 +1,25 @@
 locals {
-  values          = yamlencode(var.values)
-  values_file     = "${path.module}/values/${md5(local.values)}.yaml"
-  old_values_file = "${path.module}/values/prior.yaml"
-}
-
-resource "local_file" "values" {
-  sensitive_content = local.values
-  filename          = local.values_file
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  provisioner "local-exec" {
-    when    = "destroy"
-    command = "mv ${self.filename} ${local.old_values_file}"
-  }
+  values = yamlencode(var.values)
 }
 
 resource "null_resource" "chart" {
   triggers = {
-    chart_name    = var.chart.name
-    chart_version = var.chart.version
-    release       = var.release
-    values        = md5(local_file.values.sensitive_content)
+    chart       = var.chart
+    version     = var.chart_version
+    release     = var.release
+    namespace   = var.namespace
+    environment = md5(jsonencode(var.environment_variables))
+    values      = md5(local.values)
   }
 
   provisioner "local-exec" {
-    when    = "create"
-    command = "helm template --values='${local.values_file}' --version='${var.chart.version}' '${var.release}' '${var.chart.name}' | kubectl apply -f -"
+    command     = "helm upgrade -n '${var.namespace}' --install --values - --version='${var.chart_version}' '${var.release}' '${var.chart}' << 'EOF'\n${local.values}\nEOF"
+    environment = var.environment_variables
   }
 
   provisioner "local-exec" {
-    when    = "destroy"
-    command = "helm template --values='${local.old_values_file}' --version='${var.chart.version}' '${var.release}' '${var.chart.name}' | kubectl delete -f -"
+    when        = "destroy"
+    command     = "helm uninstall -n '${var.namespace}' '${var.release}'"
+    environment = var.environment_variables
   }
 }

@@ -1,9 +1,11 @@
 variable "chart" {
-  description = "Chart to apply"
-  type = object({
-    name    = string
-    version = string
-  })
+  description = "Chart name"
+  type        = string
+}
+
+variable "chart_version" {
+  description = "Chart version"
+  type        = string
 }
 
 variable "release" {
@@ -13,5 +15,16 @@ variable "release" {
 
 variable "values" {
   description = "Values to supply the Chart"
+  default     = {}
+}
+
+variable "namespace" {
+  description = "Kubernetes namespace"
+  default     = "default"
+}
+
+
+variable "environment_variables" {
+  description = "environment variable when running helm"
   default     = {}
 }
